@@ -10,11 +10,13 @@ from django.views.decorators.csrf import csrf_exempt
 @method_decorator(csrf_exempt, name='dispatch')
 class UserInfoView(View):
     def post(self, request, *args, **kwargs):
-        username = request.POST.username('username')
+        username = request.POST.get('username')
+        print(username) #printing username
         if not username:
             return JsonResponse({'error': 'username is required'}, status = 400)
         
         ip_address = self.get_client_ip(request)
+        print(f'My IP Adress is: {ip_address}')
         city = self.get_client_city(ip_address)
         temperature = self.get_temperature(city)
 
@@ -22,24 +24,29 @@ class UserInfoView(View):
             'username': username,
             'ip_address': ip_address,
             'city': city,
-            'temperature': temperature
+            'temperature': temperature,
+
+            'client_ip': ip_address,
+            'location': city,
+            'greeting': f'Hello {username}!, the temperature is {temperature} degrees in {city}'
         })
     
 
     def get_client_ip(self, request):
-        x_forwaded_for = request.META.get('HTTP_X_FORARDED_FOR')
+        x_forwaded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwaded_for:
             ip = x_forwaded_for.split(',')[0]
-            print(x_forwaded_for)
-            print(ip)
+            # print(f'Forwarded: {x_forwaded_for}')
+            # print(ip)
         else:
-            ip = request.META.get('REMOTE ADDR')
+            ip = request.META.get('REMOTE_ADDR')
         return ip
     
 
     def get_client_city(self, ip_address):
         response = requests.get(f'https://ipapi.co/{ip_address}/json')
         data = response.json()
+        print(data)
         return data.get('city', 'Unknown')
     
 
